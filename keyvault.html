@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KeyVault — Password Security</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --bg:        #0f0f11;
+  --surface:   #16161a;
+  --surface2:  #1c1c22;
+  --border:    #2a2a35;
+  --border2:   #363645;
+  --text:      #e8e8f0;
+  --text2:     #9090a8;
+  --text3:     #5a5a72;
+  --accent:    #c8b8ff;
+  --accent-bg: rgba(200,184,255,0.08);
+  --accent-glow: rgba(200,184,255,0.15);
+  --good:      #7dd3b0;
+  --warn:      #e8b86d;
+  --danger:    #e87d7d;
+  --ok:        #7dd3b0;
+  --shadow:    0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] {
+  --bg:        #f5f4f2;
+  --surface:   #ffffff;
+  --surface2:  #f0eff0;
+  --border:    #e2e1e8;
+  --border2:   #d0cfd8;
+  --text:      #1a1a24;
+  --text2:     #6b6b85;
+  --text3:     #a8a8bf;
+  --accent:    #7c5cbf;
+  --accent-bg: rgba(124,92,191,0.07);
+  --accent-glow: rgba(124,92,191,0.12);
+  --good:      #2d8f68;
+  --warn:      #b07d2a;
+  --danger:    #c04545;
+  --ok:        #2d8f68;
+  --shadow:    0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s var(--ease), color 0.3s var(--ease);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Layout ─── */
+
+.app {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+/* ─── Header ─── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 52px;
+}
+
+.header-left {}
+
+.wordmark {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.wordmark span {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.tagline {
+  font-size: 12px;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+  margin-top: 6px;
+  font-weight: 300;
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  transition: all 0.2s var(--ease);
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* ─── Tabs ─── */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface2);
+  padding: 3px;
+  border-radius: 10px;
+  margin-bottom: 32px;
+  border: 1px solid var(--border);
+}
+
+.tab {
+  flex: 1;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  letter-spacing: 0.01em;
+}
+
+.tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.tab:hover:not(.active) { color: var(--text); }
+
+/* ─── Panel ─── */
+
+.panel { display: none; }
+.panel.active { display: block; animation: rise 0.3s var(--ease); }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Card ─── */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 16px;
+}
+
+/* ─── Password Output ─── */
+
+.pw-output {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  min-height: 54px;
+  transition: border-color 0.2s;
+}
+
+.pw-output:focus-within,
+.pw-output:hover { border-color: var(--border2); }
+
+.pw-text {
+  flex: 1;
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+  word-break: break-all;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
+.pw-text.empty {
+  color: var(--text3);
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  border: none;
+  background: none;
+  color: var(--text3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.icon-btn svg { width: 15px; height: 15px; stroke-width: 1.8; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ─── Slider ─── */
+
+.slider-group {
+  margin-bottom: 20px;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.slider-header label {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 400;
+}
+
+.slider-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--border2);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  transition: box-shadow 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px var(--accent-glow);
+}
+
+/* ─── Checkboxes ─── */
+
+.options-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--surface2);
+}
+
+.opt-row:hover { border-color: var(--border2); }
+
+.opt-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.opt-row label {
+  font-size: 12.5px;
+  color: var(--text2);
+  cursor: pointer;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+/* ─── Generate Button ─── */
+
+.btn-generate {
+  width: 100%;
+  padding: 13px 20px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: all 0.2s var(--ease);
+}
+
+.btn-generate:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+.btn-generate:active { transform: translateY(0); }
+
+/* ─── Strength Display ─── */
+
+.strength-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.strength-label-text {
+  font-size: 12px;
+  color: var(--text3);
+  letter-spacing: 0.05em;
+}
+
+.strength-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  font-style: italic;
+  transition: color 0.3s;
+}
+
+.bar-track {
+  height: 3px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s var(--ease), background 0.4s;
+}
+
+/* ─── Stats ─── */
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px 14px;
+}
+
+.stat-k {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-weight: 400;
+}
+
+.stat-v {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* ─── Crack Times ─── */
+
+.crack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.crack-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.crack-who {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.crack-speed {
+  font-size: 9px;
+  color: var(--text3);
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 8px;
+}
+
+.crack-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* ─── Checker Input ─── */
+
+.check-wrap {
+  position: relative;
+  margin-bottom: 0;
+}
+
+.check-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  padding: 14px 48px 14px 16px;
+  outline: none;
+  transition: border-color 0.2s;
+  letter-spacing: 0.04em;
+}
+
+.check-input::placeholder {
+  color: var(--text3);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+.check-input:focus { border-color: var(--accent); }
+
+.vis-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+  padding: 4px;
+}
+
+.vis-btn:hover { color: var(--accent); }
+.vis-btn svg { width: 16px; height: 16px; stroke-width: 1.8; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ─── Threat badge ─── */
+
+.threat-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.threat-pill {
+  font-family: 'DM Serif Display', serif;
+  font-size: 13px;
+  font-style: italic;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--accent-bg);
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.threat-text {
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+/* ─── Suggestions ─── */
+
+.suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.suggestion:last-child { border-bottom: none; padding-bottom: 0; }
+.suggestion:first-child { padding-top: 0; }
+
+.sug-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sug-icon svg { width: 14px; height: 14px; stroke-width: 2; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ─── Toast ─── */
+
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s var(--ease);
+  z-index: 9999;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 520px) {
+  .options-list { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .crack-grid { grid-template-columns: 1fr; }
+  .app { padding: 32px 16px 60px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="wordmark">Key<span>Vault</span></div>
+      <div class="tagline">Password generation & security analysis</div>
+    </div>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <svg id="theme-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('gen')">Generate</button>
+    <button class="tab" onclick="switchTab('check')">Analyse</button>
+  </div>
+
+  <!-- GENERATOR -->
+  <div class="panel active" id="panel-gen">
+
+    <div class="card">
+      <div class="card-label">Generated password</div>
+
+      <div class="pw-output">
+        <div class="pw-text empty" id="gen-pw">Click generate to create a password</div>
+        <button class="icon-btn" onclick="copyPw()" title="Copy">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </button>
+        <button class="icon-btn" onclick="generatePw()" title="Regenerate">
+          <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        </button>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <label>Length</label>
+          <div class="slider-val" id="len-val">16</div>
+        </div>
+        <input type="range" min="6" max="64" value="16" id="len-slider" oninput="onLen()">
+      </div>
+
+      <div class="options-list">
+        <label class="opt-row">
+          <input type="checkbox" id="o-upper" checked onchange="generatePw()">
+          <label for="o-upper">Uppercase A–Z</label>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="o-lower" checked onchange="generatePw()">
+          <label for="o-lower">Lowercase a–z</label>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="o-digits" checked onchange="generatePw()">
+          <label for="o-digits">Digits 0–9</label>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="o-symbols" checked onchange="generatePw()">
+          <label for="o-symbols">Symbols !@#$</label>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="o-ambig" onchange="generatePw()">
+          <label for="o-ambig">Avoid ambiguous</label>
+        </label>
+        <label class="opt-row">
+          <input type="checkbox" id="o-pronounce" onchange="generatePw()">
+          <label for="o-pronounce">Pronounceable</label>
+        </label>
+      </div>
+
+      <button class="btn-generate" onclick="generatePw()">Generate password</button>
+    </div>
+
+    <div class="card" id="gen-analysis" style="display:none">
+      <div class="card-label">Security analysis</div>
+
+      <div class="strength-row">
+        <span class="strength-label-text">Strength</span>
+        <span class="strength-name" id="gen-strength-name"></span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="gen-bar"></div></div>
+
+      <div class="stats-row" id="gen-stats"></div>
+    </div>
+
+    <div class="card" id="gen-crack-card" style="display:none">
+      <div class="card-label">Time to crack</div>
+      <div class="crack-grid" id="gen-crack"></div>
+    </div>
+
+  </div>
+
+  <!-- ANALYSER -->
+  <div class="panel" id="panel-check">
+
+    <div class="card">
+      <div class="card-label">Your password</div>
+      <div class="check-wrap">
+        <input class="check-input" type="password" id="check-input"
+          placeholder="Enter a password to analyse…"
+          oninput="analysePw()"
+          autocomplete="new-password" spellcheck="false">
+        <button class="vis-btn" onclick="toggleVis()">
+          <svg id="vis-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="check-results" style="display:none">
+
+      <div class="card">
+        <div class="card-label">Security level</div>
+        <div class="strength-row">
+          <span class="strength-label-text">Strength</span>
+          <span class="strength-name" id="check-strength-name"></span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="check-bar"></div></div>
+        <div class="stats-row" id="check-stats" style="margin-bottom:16px"></div>
+        <div class="threat-row">
+          <div class="threat-pill" id="threat-pill"></div>
+          <div class="threat-text" id="threat-text"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Estimated crack time</div>
+        <div class="crack-grid" id="check-crack"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Recommendations</div>
+        <div id="check-suggestions"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Copied to clipboard</div>
+
+
+<script>
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+
+const MOON_SVG = '<circle cx="12" cy="12" r="5"/><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>';
+const SUN_SVG  = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+
+function toggleTheme() {
+  var html = document.documentElement;
+  var isDark = html.dataset.theme === 'dark';
+  html.dataset.theme = isDark ? 'light' : 'dark';
+  document.getElementById('theme-icon').innerHTML = isDark ? MOON_SVG : SUN_SVG;
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(function(el, i) {
+    el.classList.toggle('active', (t === 'gen' && i === 0) || (t === 'check' && i === 1));
+  });
+  document.getElementById('panel-gen').classList.toggle('active', t === 'gen');
+  document.getElementById('panel-check').classList.toggle('active', t === 'check');
+}
+
+// ── Character sets ─────────────────────────────────────────────────────────
+
+var CS = {
+  upper:   'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower:   'abcdefghijklmnopqrstuvwxyz',
+  digits:  '0123456789',
+  symbols: '!@#$%^&*()-_=+[]{}|;:,.<>?',
+  ambig:   '0O1lI',
+};
+
+var VOWELS = 'aeiou', CONSONANTS = 'bcdfghjklmnpqrstvwxyz';
+var currentPw = '';
+
+// ── Generator ──────────────────────────────────────────────────────────────
+
+function generatePw() {
+  var len     = +document.getElementById('len-slider').value;
+  var upper   = document.getElementById('o-upper').checked;
+  var lower   = document.getElementById('o-lower').checked;
+  var digits  = document.getElementById('o-digits').checked;
+  var symbols = document.getElementById('o-symbols').checked;
+  var noAmbig = document.getElementById('o-ambig').checked;
+  var pronoun = document.getElementById('o-pronounce').checked;
+
+  if (!upper && !lower && !digits && !symbols)
+    document.getElementById('o-lower').checked = true;
+
+  var pw = '';
+  if (pronoun) {
+    pw = mkPronounceable(len, upper, digits, symbols);
+  } else {
+    var pool = '';
+    if (upper)   pool += CS.upper;
+    if (lower)   pool += CS.lower;
+    if (digits)  pool += CS.digits;
+    if (symbols) pool += CS.symbols;
+    if (noAmbig) pool = pool.split('').filter(function(c){return CS.ambig.indexOf(c)<0;}).join('');
+
+    var rnd = new Uint32Array(len);
+    crypto.getRandomValues(rnd);
+    var arr = Array.from(rnd).map(function(n){return pool[n % pool.length];});
+
+    var must = [];
+    if (upper)   must.push(pick(CS.upper, noAmbig));
+    if (lower)   must.push(pick(CS.lower, noAmbig));
+    if (digits)  must.push(pick(CS.digits, noAmbig));
+    if (symbols) must.push(pick(CS.symbols, noAmbig));
+    must.forEach(function(c, i){arr[i] = c;});
+    shuffle(arr);
+    pw = arr.join('');
+  }
+
+  currentPw = pw;
+  var el = document.getElementById('gen-pw');
+  el.textContent = pw;
+  el.classList.remove('empty');
+  document.getElementById('gen-analysis').style.display = 'block';
+  document.getElementById('gen-crack-card').style.display = 'block';
+  renderStrength(pw, 'gen');
+}
+
+function mkPronounceable(len, useUpper, useDigits, useSymbols) {
+  var r = '', v = Math.random() > 0.5;
+  while (r.length < len) {
+    var c = (v ? VOWELS : CONSONANTS)[Math.floor(Math.random() * (v ? 5 : 21))];
+    if (useUpper && Math.random() > 0.8) c = c.toUpperCase();
+    r += c; v = !v;
+    if (useDigits  && r.length < len && Math.random() > 0.85) r += Math.floor(Math.random() * 10);
+    if (useSymbols && r.length < len && Math.random() > 0.9)  r += '!@#$%'[Math.floor(Math.random() * 5)];
+  }
+  return r.slice(0, len);
+}
+
+function pick(pool, noAmbig) {
+  if (noAmbig) pool = pool.split('').filter(function(c){return CS.ambig.indexOf(c)<0;}).join('');
+  if (!pool) return '';
+  var a = new Uint32Array(1); crypto.getRandomValues(a);
+  return pool[a[0] % pool.length];
+}
+
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+}
+
+function onLen() {
+  document.getElementById('len-val').textContent = document.getElementById('len-slider').value;
+  generatePw();
+}
+
+// ── Analyser UI ────────────────────────────────────────────────────────────
+
+function analysePw() {
+  var pw = document.getElementById('check-input').value;
+  document.getElementById('check-results').style.display = pw ? 'block' : 'none';
+  if (pw) renderStrength(pw, 'check');
+}
+
+function toggleVis() {
+  var inp = document.getElementById('check-input');
+  var on = inp.type === 'text';
+  inp.type = on ? 'password' : 'text';
+  document.getElementById('vis-icon').innerHTML = on
+    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// KEYVAULT ANALYSIS ENGINE v4
+//
+// Single universal engine — same rules for generated and user passwords.
+// No bypass flags, no special cases per source.
+//
+// Approach:
+//   1. Banned list check (whole password + leet-reversed)
+//   2. Keyboard walk detection
+//   3. Classify password as "genuinely complex" or "pattern-based":
+//      - Genuinely complex: 3+ char categories, no long word-like alpha runs,
+//        no leet-word substitutions, no suspect leet patterns -> brute-force
+//      - Pattern-based: token-by-token analysis with word-list model for
+//        word-like alpha segments, brute-force for random mixed-case chunks
+//
+// Calibrated so that:
+//   "SalutationsJeune"              -> Fair   (word-pattern)
+//   "Boldecacahuetes"               -> Fair   (word-pattern)
+//   "Jesuisbeaugosseetjaimelesgens" -> Fair   (word-pattern, long but capped)
+//   "yTHMnf<DA59:rB"                -> Excellent (genuinely complex)
+//   "kH9#mXvP2$nQrL7"               -> Excellent (genuinely complex)
+//   "Tr0ub4dor&3"                   -> Weak   (leet word detected)
+//   "Correct#Horse7"                -> Fair   (word combo + digit)
+//   "Jean2024"                      -> Weak   (name + year)
+//   "password", "bonjour"           -> Critical (banned)
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── Banned list ───────────────────────────────────────────────────────────
+var BANNED = new Set([
+  'password','password1','password123','passwd','pass','p@ssword','p@ss','p@ssw0rd',
+  'qwerty','qwerty123','qwertyuiop','azerty','azertyuiop','azerty123',
+  '123456','1234567','12345678','123456789','1234567890',
+  '111111','222222','333333','444444','555555','666666','777777','888888','999999','000000',
+  '123123','321321','112233','1q2w3e','1q2w3e4r','abc123','a1b2c3',
+  'iloveyou','letmein','welcome','admin','administrator','root','guest','test','user',
+  'login','master','dragon','monkey','shadow','sunshine','princess','football',
+  'baseball','superman','batman','spiderman','starwars','trustno1','access',
+  'hello','hello123','changeme','secret','passw0rd','pa55word',
+  'motdepasse','bonjour','soleil','amour','cherie','lapin','chaton','secret123',
+  'maison','jardin','france','paris','marseille','toulouse','bordeaux','lyon',
+  'michael','jessica','thomas','charlie','robert','daniel','andrew','jennifer',
+  'sophie','emma','lucas','gabriel','alexandre','nicolas','julien','maxime',
+  'camille','manon','lea','marie','pierre','jean','paul','claude',
+  'summer','winter','spring','flower','coffee','butter','chicken','cheese',
+  'apple','orange','banana','hunter','ranger',
+  'p4ssword','passw0rd','pa55word','p@55w0rd','l3tm3in','@dmin',
+]);
+
+// ── Keyboard sequences ────────────────────────────────────────────────────
+var KB_SEQS = (function() {
+  var rows = ['qwertyuiop','asdfghjkl','zxcvbnm','azertyuiop','qsdfghjklm','wxcvbn','1234567890'];
+  var out = [];
+  for (var i = 0; i < rows.length; i++) {
+    out.push(rows[i]);
+    out.push(rows[i].split('').reverse().join(''));
+  }
+  return out;
+})();
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function deleet(s) {
+  return s.toLowerCase()
+    .replace(/[@4]/g,'a').replace(/3/g,'e').replace(/[!1|]/g,'i')
+    .replace(/0/g,'o').replace(/[$5]/g,'s').replace(/[7+]/g,'t').replace(/8/g,'b');
+}
+
+function charsetOf(s) {
+  var n = 0;
+  if (/[a-z]/.test(s)) n += 26;
+  if (/[A-Z]/.test(s)) n += 26;
+  if (/[0-9]/.test(s)) n += 10;
+  if (/[^a-zA-Z0-9]/.test(s)) n += 33;
+  return n || 1;
+}
+
+// A token is "word-like" if it looks like it came from human vocabulary
+function isWordLike(tok) {
+  if (tok === tok.toLowerCase()) return true;              // all lower
+  if (/^[A-Z][a-z]+$/.test(tok)) return true;            // TitleCase
+  if (/^([A-Z][a-z]+)+$/.test(tok)) return true;         // CamelCase
+  if (tok === tok.toUpperCase()) return true;             // ALL CAPS
+  return false;
+}
+
+// Split CamelCase for accurate word-count: "SalutationsJeune" -> ["Salutations","Jeune"]
+function splitCamel(tok) {
+  return tok.replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+            .split(' ');
+}
+
+// ── Main estimator ────────────────────────────────────────────────────────
+function estimateGuesses(pw) {
+  if (!pw) return { guesses: 1, vector: 'Empty' };
+
+  var lower = pw.toLowerCase();
+  var dl    = deleet(pw);
+
+  // 1. Banned
+  if (BANNED.has(lower) || BANNED.has(dl)) {
+    return { guesses: 5, vector: 'Common password list', tokens: [] };
+  }
+
+  // 2. Keyboard walk (>=60% of password)
+  for (var si = 0; si < KB_SEQS.length; si++) {
+    var seq = KB_SEQS[si];
+    for (var len = Math.min(pw.length, seq.length); len >= 4; len--) {
+      for (var ki = 0; ki <= seq.length - len; ki++) {
+        if (lower.indexOf(seq.slice(ki, ki + len)) !== -1 && len >= pw.length * 0.6) {
+          var extra = pw.length - len;
+          var g = Math.pow(4, len - 3) * Math.pow(charsetOf(pw), Math.max(extra, 1));
+          return { guesses: Math.round(g), vector: 'Keyboard walk', tokens: [] };
+        }
+      }
+    }
+  }
+
+  // 3. Classify: genuinely complex vs pattern-based
+  var cats = [/[a-z]/.test(pw), /[A-Z]/.test(pw), /[0-9]/.test(pw), /[^a-zA-Z0-9]/.test(pw)]
+    .filter(Boolean).length;
+  var alphaTokens = pw.match(/[a-zA-Z]+/g) || [];
+  
+  // Word-like run: any alpha segment > 5 chars that looks like a word
+  var hasWordLikeRun = alphaTokens.some(function(t) { return t.length > 5 && isWordLike(t); });
+  
+  // Leet word: token where deleet actually changed something (real leet chars) AND result is long
+  var hasLeetWord = alphaTokens.some(function(t) {
+    var dt = deleet(t);
+    var actuallyLeet = dt !== t.toLowerCase();
+    return actuallyLeet && dt.length > 4 && dt === dt.toLowerCase();
+  });
+  
+  // Suspect leet pattern: leet-looking digit/symbol sandwiched between letters
+  var hasSuspectLeet = /[a-zA-Z][034578][a-zA-Z]|[a-zA-Z][@$!][a-zA-Z]/.test(pw);
+
+  // Genuinely complex: 3+ categories, long enough, no word-like or leet patterns
+  if (cats >= 3 && pw.length >= 10 && !hasWordLikeRun && !hasLeetWord && !hasSuspectLeet) {
+    var cs = charsetOf(pw);
+    return { guesses: Math.pow(cs, pw.length) / 2, vector: 'Brute-force', tokens: [] };
+  }
+
+  // 4. Token-by-token analysis
+  var tokens = pw.match(/[a-zA-Z]+|\d+|[^a-zA-Z\d]/g) || [pw];
+  var total = 1;
+  var minG = Infinity;
+  var domType = 'bruteforce';
+
+  for (var ti = 0; ti < tokens.length; ti++) {
+    var tok = tokens[ti];
+    var g2, type;
+
+    if (/^[a-zA-Z]+$/.test(tok)) {
+      var dt2 = deleet(tok);
+      var tokIsLeet = dt2 !== tok.toLowerCase() && dt2.length > 3;
+      
+      if (isWordLike(tok) || tokIsLeet) {
+        // Word-list model
+        var parts = splitCamel(tok);
+        var totalLen = parts.reduce(function(s, p) { return s + p.length; }, 0);
+        var wc = totalLen / 5.5;
+        var wg = Math.pow(3e4, Math.max(wc, 0.5));
+        wg = Math.min(wg, 5e13); // cap: even long phrases aren't impossible
+        if (/^[A-Z]/.test(tok) && tok !== tok.toUpperCase()) wg *= 2;
+        else if (tok === tok.toUpperCase()) wg *= 4;
+        if (tokIsLeet) wg *= 6;
+        g2 = wg; type = 'alpha';
+      } else {
+        // Random mixed case: brute-force
+        g2 = Math.pow(52, tok.length) / 2; type = 'bruteforce';
+      }
+    } else if (tok.length === 1 && /[^a-zA-Z0-9]/.test(tok)) {
+      g2 = 33; type = 'symbol';
+    } else if (/^\d+$/.test(tok)) {
+      if (/^(19|20)\d{2}$/.test(tok)) { g2 = 250; type = 'year'; }
+      else { g2 = Math.pow(10, tok.length) / 2; type = 'digits'; }
+    } else {
+      g2 = Math.pow(charsetOf(tok), tok.length) / 2; type = 'bruteforce';
+    }
+
+    if (g2 < minG) { minG = g2; domType = type; }
+    total *= Math.max(g2, 1);
+  }
+
+  var VNAMES = {
+    banned: 'Common password list', keyboard: 'Keyboard walk',
+    repeat: 'Repeated characters', sequence: 'Sequential pattern',
+    alpha: 'Word-list / dictionary', digits: 'Numeric pattern',
+    year: 'Year pattern', bruteforce: 'Brute-force', symbol: 'Brute-force',
+  };
+
+  return {
+    guesses: Math.max(Math.round(total), 1),
+    vector: VNAMES[domType] || 'Brute-force',
+    tokens: tokens,
+    domType: domType,
+  };
+}
+
+// ── Scoring ───────────────────────────────────────────────────────────────
+// Piecewise log scale calibrated to calibration suite above.
+function scoreFromGuesses(g) {
+  var x = Math.log10(Math.max(g, 1));
+  if (x <= 1)  return 0;
+  if (x <= 4)  return (x - 1) * 1.0;
+  if (x <= 8)  return 3  + (x - 4)  * 3;
+  if (x <= 12) return 15 + (x - 8)  * 3.5;
+  if (x <= 16) return 29 + (x - 12) * 3.5;
+  if (x <= 20) return 43 + (x - 16) * 3.75;
+  if (x <= 24) return 58 + (x - 20) * 3.5;
+  if (x <= 28) return 72 + (x - 24) * 3;
+  if (x <= 32) return 84 + (x - 28) * 3;
+  return 96;
+}
+
+function levelFor(score) {
+  if (score <  8)  return { name: 'Critical',  pct: Math.max(score, 2), color: 'var(--danger)' };
+  if (score < 25)  return { name: 'Weak',      pct: score,              color: '#e89060' };
+  if (score < 46)  return { name: 'Fair',      pct: score,              color: 'var(--warn)' };
+  if (score < 63)  return { name: 'Good',      pct: score,              color: '#a8cc60' };
+  if (score < 80)  return { name: 'Strong',    pct: score,              color: 'var(--good)' };
+  return             { name: 'Excellent', pct: Math.min(score, 100),    color: 'var(--accent)' };
+}
+
+function threatFor(score, vector) {
+  if (score <  8)  return { pill: 'Critically exposed', color: 'var(--danger)',
+    text: 'Cracked almost instantly via ' + vector + '. This offers zero real-world protection.' };
+  if (score < 25)  return { pill: 'High risk', color: '#e89060',
+    text: 'Highly vulnerable to ' + vector + '. An attacker with basic tools could crack this in under a minute.' };
+  if (score < 46)  return { pill: 'Moderate risk', color: 'var(--warn)',
+    text: 'Susceptible to ' + vector + '. A GPU-equipped attacker could crack this within hours to days.' };
+  if (score < 63)  return { pill: 'Acceptable', color: '#a8cc60',
+    text: 'Resists casual attacks. Fine for low-stakes accounts, not recommended for sensitive data.' };
+  if (score < 80)  return { pill: 'Well protected', color: 'var(--good)',
+    text: 'Strong against known attack strategies. Suitable for all sensitive accounts.' };
+  return             { pill: 'Maximum security', color: 'var(--accent)',
+    text: 'Computationally infeasible to crack with current or foreseeable technology.' };
+}
+
+function effEntropy(g) { return Math.max(0, Math.log2(Math.max(g, 1))); }
+
+function fmtTime(s) {
+  if (!isFinite(s) || s > 3.15e19) return '> trillions yrs';
+  if (s < 0.001)    return '< 1 ms';
+  if (s < 1)        return Math.round(s * 1000) + ' ms';
+  if (s < 60)       return Math.round(s) + ' sec';
+  if (s < 3600)     return Math.round(s / 60) + ' min';
+  if (s < 86400)    return Math.round(s / 3600) + ' hrs';
+  if (s < 2592000)  return Math.round(s / 86400) + ' days';
+  if (s < 31536000) return Math.round(s / 2592000) + ' months';
+  var yr = s / 31536000;
+  if (yr < 1e3)  return Math.round(yr) + ' years';
+  if (yr < 1e6)  return (yr / 1e3).toFixed(1) + 'K years';
+  if (yr < 1e9)  return (yr / 1e6).toFixed(1) + 'M years';
+  return (yr / 1e9).toFixed(1) + 'B years';
+}
+
+function timeColor(s) {
+  if (s < 60)               return 'var(--danger)';
+  if (s < 86400 * 7)        return '#e89060';
+  if (s < 86400 * 365 * 5)  return 'var(--warn)';
+  if (s < 86400 * 365e4)    return '#a8cc60';
+  return 'var(--good)';
+}
+
+// Realistic 2024 attack speeds
+var SCENARIOS = [
+  { name: 'Online (throttled)', speed: 10,   fmt: '10/s'   },
+  { name: 'Offline / bcrypt',   speed: 1e7,  fmt: '10M/s'  },
+  { name: 'Offline / MD5+GPU',  speed: 1e11, fmt: '100B/s' },
+];
+
+// ── Render ────────────────────────────────────────────────────────────────
+function renderStrength(pw, pfx) {
+  var res   = estimateGuesses(pw);
+  var score = scoreFromGuesses(res.guesses);
+  var lvl   = levelFor(score);
+  var eff   = Math.round(effEntropy(res.guesses));
+
+  document.getElementById(pfx + '-bar').style.width      = lvl.pct + '%';
+  document.getElementById(pfx + '-bar').style.background = lvl.color;
+  document.getElementById(pfx + '-strength-name').textContent = lvl.name;
+  document.getElementById(pfx + '-strength-name').style.color = lvl.color;
+
+  document.getElementById(pfx + '-stats').innerHTML =
+    '<div class="stat"><div class="stat-k">Eff. entropy</div><div class="stat-v">' + eff + ' bits</div></div>' +
+    '<div class="stat"><div class="stat-k">Length</div><div class="stat-v">' + pw.length + ' chars</div></div>' +
+    '<div class="stat"><div class="stat-k">Worst vector</div><div class="stat-v" style="font-size:11px;color:var(--text2);font-weight:400;line-height:1.35">' + res.vector + '</div></div>';
+
+  document.getElementById(pfx + '-crack').innerHTML = SCENARIOS.map(function(s) {
+    var t = res.guesses / s.speed;
+    return '<div class="crack-item"><div class="crack-who">' + s.name + '</div><div class="crack-speed">' + s.fmt + '</div><div class="crack-time" style="color:' + timeColor(t) + '">' + fmtTime(t) + '</div></div>';
+  }).join('');
+
+  if (pfx === 'check') {
+    var thr = threatFor(score, res.vector);
+    document.getElementById('threat-pill').textContent = thr.pill;
+    document.getElementById('threat-pill').style.color = thr.color;
+    document.getElementById('threat-text').textContent = thr.text;
+
+    var alphaT   = pw.match(/[a-zA-Z]+/g) || [];
+    var hasAlpha = alphaT.some(function(t) { return t.length >= 4 && isWordLike(t); });
+    var hasKb    = res.vector === 'Keyboard walk';
+    var hasYear  = /(?:19|20)\d{2}/.test(pw);
+    var isBanned = BANNED.has(pw.toLowerCase()) || BANNED.has(deleet(pw));
+    var hasLeet  = /[a-zA-Z][034578][a-zA-Z]|[a-zA-Z][@$!][a-zA-Z]/.test(pw);
+
+    var checks = [
+      { ok: pw.length >= 14,
+        bad:  'Too short — aim for 14+ characters (current: ' + pw.length + ')',
+        good: 'Good length — ' + pw.length + ' characters' },
+      { ok: !hasAlpha,
+        bad:  'Contains word-like segments — word-list attacks target these first',
+        good: 'No word-like letter runs detected' },
+      { ok: /[0-9]/.test(pw),
+        bad:  'Add digits (0-9)', good: 'Contains digits' },
+      { ok: /[^a-zA-Z0-9]/.test(pw),
+        bad:  'Add symbols (!@#$...)', good: 'Contains special characters' },
+      { ok: /[A-Z]/.test(pw) && /[a-z]/.test(pw),
+        bad:  'Mix upper and lowercase for more entropy', good: 'Uses mixed case' },
+      { ok: !hasKb,
+        bad:  'Keyboard patterns (qwerty, azerty...) are trivially cracked',
+        good: 'No keyboard patterns detected' },
+      { ok: !hasLeet,
+        bad:  'Leet substitutions (3=e, 0=o...) are among the first things attackers try',
+        good: 'No leet substitution patterns detected' },
+      { ok: !hasYear,
+        bad:  'Years (2024, 1999...) are among the first things attackers append',
+        good: 'No year patterns detected' },
+      { ok: !isBanned,
+        bad:  'This password (or a leet variant) is on known breach lists',
+        good: 'Not found in common password lists' },
+    ];
+
+    document.getElementById('check-suggestions').innerHTML = checks.map(function(c) {
+      return '<div class="suggestion"><span class="sug-icon" style="color:' + (c.ok ? 'var(--ok)' : 'var(--warn)') + '"><svg viewBox="0 0 24 24">' +
+        (c.ok
+          ? '<polyline points="20 6 9 17 4 12"/>'
+          : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>') +
+        '</svg></span><span>' + (c.ok ? c.good : c.bad) + '</span></div>';
+    }).join('');
+  }
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────
+function copyPw() {
+  if (!currentPw) return;
+  var ta = document.createElement('textarea');
+  ta.value = currentPw;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  if (navigator.clipboard) navigator.clipboard.writeText(currentPw).catch(function(){});
+  var t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2200);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+generatePw();
+
+</script>
+</body>
+</html>
